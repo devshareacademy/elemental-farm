@@ -1,0 +1,25 @@
+{
+  "eslint.format.enable": true,
+  "eslint.options": {
+    "overrideConfigFile": "config/eslint.config.mjs"
+  },
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "cSpell.words": [
+    "anims",
+    "Aseprite",
+    "devshareacademy",
+    "DROW",
+    "firstgid",
+    "Interactable",
+    "respawn",
+    "spritesheet",
+    "spritesheets",
+    "Tilemap",
+    "Tilemaps",
+    "tileset",
+    "tweens"
+  ]
+}
