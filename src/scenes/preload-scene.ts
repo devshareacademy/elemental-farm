@@ -21,9 +21,25 @@ export class PreloadScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
+    this.load.spritesheet('gui', 'assets/spritesheets/element_bar.png', {
+      frameWidth: 64,
+      frameHeight: 540,
+    });
   }
 
   public create(): void {
+    this.createAnimations();
     this.scene.start(SCENE_KEYS.GAME_SCENE);
+  }
+
+  private createAnimations(): void {
+    this.anims.create({
+      key: 'gui',
+      frames: this.anims.generateFrameNumbers('gui'),
+      frameRate: 2.5,
+      repeat: -1,
+      delay: 0,
+      yoyo: false,
+    });
   }
 }

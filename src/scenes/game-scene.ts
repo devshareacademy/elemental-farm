@@ -61,6 +61,8 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.05, 0.2);
 
     this.handleToolSelected(seedPacket1);
+
+    this.add.sprite(0, 0, 'gui', 0).setOrigin(0).play('gui');
   }
 
   public update(): void {
