@@ -1,11 +1,5 @@
-import { SCALE_FACTOR } from '../common';
-import { PLANT_TYPE, PlantType } from '../common/types';
-
-const PLANT_TYPE_TO_SEED_MAP = {
-  PUMPKIN: 0,
-  POTATO: 10,
-  CARROT: 5,
-} as const;
+import { PLANT_TYPE_TO_SEED_MAP, SCALE_FACTOR } from '../common';
+import { PLANT_TYPE, PlantType } from '../common';
 
 export class PlantPlot extends Phaser.GameObjects.Image {
   private planted: boolean;
