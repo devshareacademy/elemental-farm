@@ -12,16 +12,16 @@ import {
 } from '../common';
 
 const FIRE_HEAVY = {
-  EARTH: 5,
-  WATER: 4,
-  FIRE: 7,
-  AIR: 4,
+  EARTH: 4,
+  WATER: 3,
+  FIRE: 10,
+  AIR: 3,
 };
 
 const WATER_HEAVY = {
-  EARTH: 4,
-  WATER: 7,
-  FIRE: 4,
+  EARTH: 3,
+  WATER: 9,
+  FIRE: 3,
   AIR: 5,
 };
 
@@ -46,6 +46,7 @@ export class FarmTile extends Phaser.GameObjects.Container {
   private soil: Phaser.GameObjects.Rectangle;
   private soilElementBalance: ElementBalance;
   private gridPosition: GridPosition;
+  private soilTween!: Phaser.Tweens.Tween | undefined;
 
   constructor(scene: Phaser.Scene, x: number, y: number, gridPosition: GridPosition, balanceType: FarmTileBalanceType) {
     super(scene, x, y);
@@ -61,6 +62,7 @@ export class FarmTile extends Phaser.GameObjects.Container {
     }
 
     this.soil = scene.add.rectangle(0, 0, TILE_SIZE - 4, TILE_SIZE - 4, DEFAULT_COLOR, 0.8);
+
     this.updateColor();
     this.add(this.soil);
 
@@ -88,6 +90,7 @@ export class FarmTile extends Phaser.GameObjects.Container {
     this.soilElementBalance.FIRE -= elementImpact.consumes.FIRE;
 
     this.updateColor();
+    this.deHighLight();
   }
 
   public resetSoilIfDepleted(): void {
@@ -136,5 +139,27 @@ export class FarmTile extends Phaser.GameObjects.Container {
       return false;
     }
     return this.crop.isReadyToHarvest();
+  }
+
+  public highLight(): void {
+    if (this.soilTween !== undefined) {
+      return;
+    }
+    this.soil.setAlpha(1);
+    this.soilTween = this.scene.tweens.add({
+      targets: this.soil,
+      alpha: 0.2,
+      duration: 1500,
+      repeat: -1,
+      yoyo: true,
+    });
+  }
+
+  public deHighLight(): void {
+    if (this.soilTween !== undefined) {
+      this.soilTween.destroy();
+    }
+    this.soil.setAlpha(1);
+    this.soilTween = undefined;
   }
 }

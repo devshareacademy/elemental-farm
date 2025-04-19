@@ -1,10 +1,22 @@
 import * as Phaser from 'phaser';
 import { SCENE_KEYS } from './scene-keys';
-import { FARM_TILE_BALANCE_TYPE, FarmTileBalanceType, GridPosition, PLANT_TYPE, PlantType } from '../common';
+import {
+  FARM_TILE_BALANCE_TYPE,
+  FarmTileBalanceType,
+  GridPosition,
+  INTRO_DIALOG,
+  PLANT_TYPE,
+  PlantType,
+} from '../common';
 import { SCALE_FACTOR, TILE_SIZE } from '../common';
 import { ElementSystem } from '../objects/element-system';
 import { FarmTile } from '../objects/farm-tile';
 import { ElementPieGauge } from '../objects/element-pie-gauge';
+import { DAY_DURATION, getTimeOfDay } from '../common/utils';
+import { DayNightPipeline } from '../shaders/day-night-shader';
+import { UiScene } from './ui-scene';
+import { harvestCrop, plantCrop } from '../common/goals';
+import { Dialog } from '../objects/dialog';
 
 const DATA_KEYS = {
   GRID: 'GRID',
@@ -12,11 +24,10 @@ const DATA_KEYS = {
 } as const;
 
 const STARTING_TILES = [
-  [1, 1, 1, 1, 1, 2],
-  [1, 1, 1, 1, 2, 2],
-  [1, 1, 1, 2, 2, 2],
-  [1, 1, 2, 2, 2, 2],
-  [1, 2, 2, 2, 2, 2],
+  [1, 1, 1, 1],
+  [1, 1, 0, 0],
+  [1, 0, 0, 2],
+  [0, 0, 2, 2],
 ] as const;
 
 export class GameScene extends Phaser.Scene {
@@ -27,6 +38,17 @@ export class GameScene extends Phaser.Scene {
   private lockInput!: boolean;
   private elementSystem!: ElementSystem;
   private pie!: ElementPieGauge;
+  private bgOverlay!: Phaser.GameObjects.Image;
+  private clock!: number;
+  private tutorialFinished!: boolean;
+  private dialog!: Dialog;
+  private dialogIndex!: number;
+  private introDialogElementObjects!: Phaser.GameObjects.Text[];
+  private introDialogElementsTween!: Phaser.Tweens.Tween | undefined;
+  private introDialogFieldRect!: Phaser.GameObjects.Rectangle | undefined;
+  private introDialogFieldRectTween!: Phaser.Tweens.Tween | undefined;
+  private introDialogElementOverflowRect!: Phaser.GameObjects.Rectangle | undefined;
+  private introDialogElementOverflowTween!: Phaser.Tweens.Tween | undefined;
 
   constructor() {
     super({
@@ -35,7 +57,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   public create(): void {
-    this.lockInput = false;
+    this.lockInput = true;
+    this.clock = DAY_DURATION / 2;
+    this.tutorialFinished = false;
+    this.dialogIndex = 0;
 
     this.createBackgroundAndGui();
     this.createSeedPackets();
@@ -48,18 +73,177 @@ export class GameScene extends Phaser.Scene {
       .setScale(SCALE_FACTOR)
       .setVisible(false)
       .setAngle(-45)
-      .setOrigin(0.05, 0.2);
-    this.elementSystem = new ElementSystem(this.farmTiles);
+      .setOrigin(0.05, 0.2)
+      .setDepth(2);
+    this.elementSystem = new ElementSystem(this.farmTiles, this, this.bgOverlay);
     this.pie = new ElementPieGauge(this, 125, 125, 100, this.elementSystem.balance);
+    this.cameras.main.setPostPipeline(DayNightPipeline);
+    if (!this.scene.isActive(SCENE_KEYS.UI_SCENE)) {
+      this.scene.launch(SCENE_KEYS.UI_SCENE);
+    }
+
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+      this.dialog = new Dialog({
+        scene: this,
+        x: 100,
+        y: 400,
+        skipCallback: () => {
+          this.finishedIntro();
+        },
+      });
+      void this.showIntroDialog();
+    });
+  }
+
+  private async showIntroDialog(): Promise<void> {
+    await this.dialog.showDialog(INTRO_DIALOG[this.dialogIndex]);
+    this.input.once(Phaser.Input.Events.POINTER_DOWN, async () => {
+      if (this.tutorialFinished) {
+        return;
+      }
+      this.dialogIndex += 1;
+      if (this.dialogIndex >= INTRO_DIALOG.length) {
+        this.finishedIntro();
+        return;
+      }
+
+      if (this.dialogIndex === 1) {
+        this.showIntroElementsText();
+      } else if (this.dialogIndex === 2) {
+        this.cleanupIntroElementsText();
+        this.showIntroFieldObjects();
+      } else if (this.dialogIndex === 3) {
+        this.cleanupIntroFieldObjects();
+        this.showIntroDialogObjects();
+      } else if (this.dialogIndex === 4) {
+        this.cleanupIntroDialogObjects();
+      }
+
+      await this.showIntroDialog();
+    });
+  }
+
+  private finishedIntro(): void {
+    this.lockInput = false;
+    this.tutorialFinished = true;
+    this.dialog.hide();
+    this.cleanupIntroElementsText();
+    this.cleanupIntroFieldObjects();
+    this.cleanupIntroDialogObjects();
+
+    const uiScene = this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene;
+    uiScene.showTimeDetails();
+    this.elementSystem.checkElementalBalances();
+  }
+
+  private showIntroElementsText(): void {
+    const fireText = this.add.text(150, 180, 'FIRE', {
+      fontFamily: 'pixellari',
+      fontSize: '40px',
+      color: '#000',
+    });
+    const airText = this.add.text(60, 30, 'AIR', {
+      fontFamily: 'pixellari',
+      fontSize: '40px',
+      color: '#000',
+    });
+    const waterText = this.add.text(150, 30, 'WATER', {
+      fontFamily: 'pixellari',
+      fontSize: '40px',
+      color: '#000',
+    });
+    const earthText = this.add.text(5, 120, 'EARTH', {
+      fontFamily: 'pixellari',
+      fontSize: '40px',
+      color: '#000',
+    });
+    this.introDialogElementObjects = [fireText, airText, waterText, earthText];
+    this.introDialogElementsTween = this.tweens.add({
+      targets: this.introDialogElementObjects,
+      scaleX: 1.1,
+      scaleY: 1.1,
+      duration: 1000,
+      repeat: -1,
+      yoyo: true,
+    });
+  }
+
+  private cleanupIntroElementsText(): void {
+    this.introDialogElementsTween?.destroy();
+    this.introDialogElementsTween = undefined;
+    this.introDialogElementObjects?.forEach((obj) => obj.destroy());
+    this.introDialogElementObjects = [];
+  }
+
+  private showIntroFieldObjects(): void {
+    this.introDialogFieldRect = this.add
+      .rectangle(TILE_SIZE * 7.5, TILE_SIZE * 3.75, TILE_SIZE * 4.5, TILE_SIZE * 3.5, 0xff0000, 0.0)
+      .setStrokeStyle(2, 0x000000, 1)
+      .setOrigin(0.5);
+    this.introDialogFieldRectTween = this.tweens.add({
+      targets: this.introDialogFieldRect,
+      scaleX: 1.05,
+      scaleY: 1.05,
+      duration: 600,
+      repeat: -1,
+      yoyo: true,
+    });
+  }
+
+  private cleanupIntroFieldObjects(): void {
+    this.introDialogFieldRectTween?.destroy();
+    this.introDialogFieldRectTween = undefined;
+    this.introDialogFieldRect?.destroy();
+    this.introDialogFieldRect = undefined;
+  }
+
+  private showIntroDialogObjects(): void {
+    this.introDialogElementOverflowRect = this.add
+      .rectangle(150, 160, 210, 120, 0x000000, 0)
+      .setStrokeStyle(2, 0x000000, 1)
+      .setOrigin(0.5)
+      .setAngle(148);
+    this.introDialogElementOverflowTween = this.tweens.add({
+      targets: this.introDialogElementOverflowRect,
+      scaleX: 1.05,
+      scaleY: 1.05,
+      duration: 600,
+      repeat: -1,
+      yoyo: true,
+    });
+  }
+
+  private cleanupIntroDialogObjects(): void {
+    this.introDialogElementOverflowTween?.destroy();
+    this.introDialogElementOverflowTween = undefined;
+    this.introDialogElementOverflowRect?.destroy();
+    this.introDialogElementOverflowRect = undefined;
   }
 
   private createBackgroundAndGui(): void {
     this.add.image(this.scale.width / 2, this.scale.height / 2, 'bg', 0).setScale(SCALE_FACTOR);
+    this.bgOverlay = this.add
+      .image(this.scale.width / 2, this.scale.height / 2, 'bg_overlay', 0)
+      .setScale(SCALE_FACTOR);
     this.add.image(this.scale.width / 2, this.scale.height - 5, 'panel', 0).setScale(SCALE_FACTOR);
-    // this.add.sprite(0, 0, 'gui', 0).setOrigin(0).play('gui').setDepth(2);
   }
 
-  public update(): void {
+  public update(time: number, delta: number): void {
+    this.elementSystem.update(time, delta);
+
+    if (!this.tutorialFinished) {
+      return;
+    }
+
+    this.clock += delta;
+    const { dayCount, hours, minutes, progress } = getTimeOfDay(this.clock);
+    const pipeline = this.cameras.main.getPostPipeline(DayNightPipeline) as DayNightPipeline;
+    pipeline.uTimeOfDay = progress;
+    const uiScene = this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene;
+    uiScene.setClockText(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+    uiScene.setDayText(dayCount.toString(10));
+
     if (this.selectedSeedPacket === undefined) {
       return;
     }
@@ -68,6 +252,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleToolSelected(gameObject: Phaser.GameObjects.Image): void {
+    if (!this.tutorialFinished || this.lockInput) {
+      return;
+    }
+
     const isAlreadySelected = this.selectedSeedPacket === gameObject;
     if (this.selectedSeedPacket !== undefined) {
       this.selectedSeedPacket.postFX.disable(true);
@@ -75,6 +263,7 @@ export class GameScene extends Phaser.Scene {
         this.selectedSeedPacket = undefined;
         this.toolCursor.setVisible(false);
         this.selectedPlot.setVisible(false);
+        this.unHighlighFarmTiles();
         return;
       }
     }
@@ -84,6 +273,31 @@ export class GameScene extends Phaser.Scene {
     gameObject.postFX.addGlow(0xffffff, 4, 0, false, 0.1, 10);
 
     this.toolCursor.setVisible(true).setFrame(this.selectedSeedPacket.frame);
+    this.highlighFarmTiles();
+  }
+
+  private highlighFarmTiles(): void {
+    if (this.selectedSeedPacket === undefined) {
+      return;
+    }
+    const plantType = this.selectedSeedPacket.getData(DATA_KEYS.SEED_TYPE) as PlantType;
+    this.farmTiles.forEach((tileRow) => {
+      tileRow.forEach((tile) => {
+        if (this.elementSystem.canPlantCrap(plantType, tile) && tile.isEmpty()) {
+          tile.highLight();
+        } else {
+          tile.deHighLight();
+        }
+      });
+    });
+  }
+
+  private unHighlighFarmTiles(): void {
+    this.farmTiles.forEach((tileRow) => {
+      tileRow.forEach((tile) => {
+        tile.deHighLight();
+      });
+    });
   }
 
   private plantSeeds(gridPosition: GridPosition): void {
@@ -121,23 +335,23 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const cropType = farmTile.harvestCrop() as PlantType;
-    this.elementSystem.plantCrop(cropType);
+    this.elementSystem.harvestCrop(cropType);
     this.checkBalance();
-    // TODO: add hook point to update stats/achievements
+    harvestCrop(cropType);
   }
 
   private createFarmTiles(): void {
     this.farmTiles = [];
 
-    for (let i = 0; i < 6; i += 1) {
+    for (let i = 0; i < 4; i += 1) {
       this.farmTiles.push([]);
-      for (let j = 1; j < 6; j += 1) {
+      for (let j = 1; j < 4; j += 1) {
         const gridPosition: GridPosition = {
           x: i,
           y: j - 1,
         };
-        const x = TILE_SIZE * (5 + i) + 1;
-        const y = TILE_SIZE * j + TILE_SIZE / 2 + 14;
+        const x = TILE_SIZE * (5 + i) + 1 + TILE_SIZE;
+        const y = TILE_SIZE * j + TILE_SIZE / 2 + 14 + TILE_SIZE;
         const balanceType = STARTING_TILES[gridPosition.y][gridPosition.x];
         let farmBalanceType: FarmTileBalanceType = FARM_TILE_BALANCE_TYPE.BALANCED;
         if (balanceType === 1) {
@@ -170,25 +384,25 @@ export class GameScene extends Phaser.Scene {
 
   private createSeedPackets(): void {
     const seedPacket1 = this.add
-      .image(TILE_SIZE * 5, this.scale.height - TILE_SIZE / 2, 'items', 5)
+      .image(TILE_SIZE * 6, this.scale.height - TILE_SIZE / 2, 'items', 5)
       .setScale(SCALE_FACTOR)
       .setData(DATA_KEYS.SEED_TYPE, PLANT_TYPE.PUMPKIN)
       .setInteractive()
       .on(Phaser.Input.Events.POINTER_DOWN, () => this.handleToolSelected(seedPacket1));
     const seedPacket2 = this.add
-      .image(TILE_SIZE * 6, this.scale.height - TILE_SIZE / 2, 'items', 6)
+      .image(TILE_SIZE * 7, this.scale.height - TILE_SIZE / 2, 'items', 6)
       .setScale(SCALE_FACTOR)
       .setData(DATA_KEYS.SEED_TYPE, PLANT_TYPE.POTATO)
       .setInteractive()
       .on(Phaser.Input.Events.POINTER_DOWN, () => this.handleToolSelected(seedPacket2));
     const seedPacket3 = this.add
-      .image(TILE_SIZE * 7, this.scale.height - TILE_SIZE / 2, 'items', 7)
+      .image(TILE_SIZE * 8, this.scale.height - TILE_SIZE / 2, 'items', 7)
       .setScale(SCALE_FACTOR)
       .setData(DATA_KEYS.SEED_TYPE, PLANT_TYPE.CARROT)
       .setInteractive()
       .on(Phaser.Input.Events.POINTER_DOWN, () => this.handleToolSelected(seedPacket3));
     const seedPacket4 = this.add
-      .image(TILE_SIZE * 8, this.scale.height - TILE_SIZE / 2, 'items', 8)
+      .image(TILE_SIZE * 9, this.scale.height - TILE_SIZE / 2, 'items', 8)
       .setScale(SCALE_FACTOR)
       .setData(DATA_KEYS.SEED_TYPE, PLANT_TYPE.TOMATO)
       .setInteractive()
@@ -199,32 +413,10 @@ export class GameScene extends Phaser.Scene {
     this.farmTiles[x][y].plantCrop(plantType);
     this.elementSystem.plantCrop(plantType);
     this.checkBalance();
-    // TODO: add hook point to update stats/achievements
+    plantCrop(plantType);
   }
 
   private checkBalance(): void {
-    const values = Object.values(this.elementSystem.balance);
-    const max = Math.max(...values);
-    const min = Math.min(...values);
-
-    if (max - min >= 3) {
-      this.handleImbalance();
-    } else {
-      this.clearImbalanceEffects();
-    }
-    console.log(this.elementSystem.balance);
-    // TODO: update UI for elements
-    // TODO: update element effects
     this.pie.setBalance(this.elementSystem.balance);
-  }
-
-  private handleImbalance() {
-    // You could slow growth, disable planting, spawn creatures, etc.
-    console.log('⚠️ Elemental imbalance detected!');
-  }
-
-  private clearImbalanceEffects() {
-    // Reset any penalties or effects
-    console.log('✅ Balance restored.');
   }
 }
