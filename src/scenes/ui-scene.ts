@@ -38,6 +38,7 @@ export class UiScene extends Phaser.Scene {
   private infoTextFx1!: Phaser.FX.Wipe;
   private infoTextFx2!: Phaser.FX.Wipe;
   public tutorialFinished!: boolean;
+  private fullScreenButton!: Phaser.GameObjects.Image;
 
   constructor() {
     super({
@@ -127,6 +128,25 @@ export class UiScene extends Phaser.Scene {
       skipCallback: () => {},
     });
     this.tutorialFinished = false;
+    this.fullScreenButton = this.add
+      .image(TILE_SIZE * 0.25, TILE_SIZE * 0.25, 'fullscreen', 0)
+      .setOrigin(0)
+      .setInteractive()
+      .on(Phaser.Input.Events.POINTER_OVER, () => {
+        this.questIcon.setAlpha(0.8);
+      })
+      .on(Phaser.Input.Events.POINTER_OUT, () => {
+        this.questIcon.setAlpha(1.0);
+      })
+      .on(Phaser.Input.Events.POINTER_DOWN, () => {
+        if (this.scale.isFullscreen) {
+          this.fullScreenButton.setFrame(0);
+          this.scale.stopFullscreen();
+          return;
+        }
+        this.fullScreenButton.setFrame(1);
+        this.scale.startFullscreen();
+      });
   }
 
   public create(): void {

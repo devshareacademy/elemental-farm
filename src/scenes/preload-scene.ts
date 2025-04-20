@@ -9,6 +9,8 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   public preload(): void {
+    this.load.image('back_btn_text', 'assets/images/back_btn_text.png');
+    this.load.image('credits', 'assets/images/credits.png');
     this.load.image('exclamation', 'assets/images/exclamation.png');
     this.load.image('checkmark', 'assets/images/checkmark.png');
     this.load.image('quest', 'assets/images/quest.png');
@@ -41,13 +43,17 @@ export class PreloadScene extends Phaser.Scene {
       frameWidth: 150,
       frameHeight: 150,
     });
+    this.load.spritesheet('fullscreen', 'assets/spritesheets/fullscreen.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
     this.load.audio('bg_4', 'assets/audio/Ambient-5.mp3');
     this.load.font('pixellari', 'assets/text/Pixellari.ttf', 'truetype');
   }
 
   public create(): void {
     this.createAnimations();
-    this.scene.start(SCENE_KEYS.GAME_SCENE);
+    this.scene.start(SCENE_KEYS.TITLE_SCENE);
   }
 
   private createAnimations(): void {

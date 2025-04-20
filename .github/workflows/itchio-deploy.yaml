@@ -29,6 +29,6 @@ jobs:
         env:
           BUTLER_CREDENTIALS: ${{ secrets.ITCH_IO_API_KEY }}
           CHANNEL: HTML
-          ITCH_GAME: market-balance
+          ITCH_GAME: elemental-farm
           ITCH_USER: galemius
           PACKAGE: dist

@@ -20,6 +20,7 @@ export class TitleScene extends Phaser.Scene {
     this.add.image(this.scale.width / 2, this.scale.height / 2, 'title', 0).setScale(SCALE_FACTOR);
     const titleText = this.add.image(this.scale.width / 2 + 20, 180, 'title_text', 0).setScale(0.7);
     const fx = (titleText.preFX as Phaser.GameObjects.Components.FX).addReveal(0.1, 0, 0);
+    titleText.postFX.addShine(0.5, 0.2, 5);
     this.bgOverlay = this.add
       .image(this.scale.width / 2, this.scale.height / 2, 'bg_overlay', 0)
       .setScale(SCALE_FACTOR);
@@ -29,6 +30,9 @@ export class TitleScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+      if (!this.scene.isActive(SCENE_KEYS.UI_SCENE)) {
+        this.scene.launch(SCENE_KEYS.UI_SCENE);
+      }
       this.tweens.add({
         targets: fx,
         progress: 1,
@@ -37,7 +41,6 @@ export class TitleScene extends Phaser.Scene {
         delay: 500,
         onComplete: () => {
           void this.elementSystem.exampleEffects();
-          this.scene.launch(SCENE_KEYS.UI_SCENE);
           this.tweens.add({
             targets: this.buttonContainer,
             alpha: 1,
@@ -100,7 +103,7 @@ export class TitleScene extends Phaser.Scene {
         this.lockInput = true;
         this.cameras.main.fadeOut(500, 0, 0, 0);
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-          this.scene.start(SCENE_KEYS.GAME_SCENE);
+          this.scene.start(SCENE_KEYS.CREDITS_SCENE);
         });
         button1.disableInteractive();
         button2.disableInteractive();
