@@ -34,7 +34,7 @@ void main(void) {
   float brightness = clamp(min(fadeIn, fadeOut), 0.0, 1.0);
 
   // Day/night tints
-  vec3 nightTint = vec3(0.15, 0.2, 0.3);
+  vec3 nightTint = vec3(0.3, 0.35, 0.45);
   vec3 dayTint = vec3(1.0, 1.0, 1.0);
 
   vec3 finalTint = mix(nightTint, dayTint, brightness);

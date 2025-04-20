@@ -16,7 +16,6 @@ import { DAY_DURATION, getTimeOfDay } from '../common/utils';
 import { DayNightPipeline } from '../shaders/day-night-shader';
 import { UiScene } from './ui-scene';
 import { harvestCrop, plantCrop } from '../common/goals';
-import { Dialog } from '../objects/dialog';
 
 const DATA_KEYS = {
   GRID: 'GRID',
@@ -41,7 +40,6 @@ export class GameScene extends Phaser.Scene {
   private bgOverlay!: Phaser.GameObjects.Image;
   private clock!: number;
   private tutorialFinished!: boolean;
-  private dialog!: Dialog;
   private dialogIndex!: number;
   private introDialogElementObjects!: Phaser.GameObjects.Text[];
   private introDialogElementsTween!: Phaser.Tweens.Tween | undefined;
@@ -49,6 +47,7 @@ export class GameScene extends Phaser.Scene {
   private introDialogFieldRectTween!: Phaser.Tweens.Tween | undefined;
   private introDialogElementOverflowRect!: Phaser.GameObjects.Rectangle | undefined;
   private introDialogElementOverflowTween!: Phaser.Tweens.Tween | undefined;
+  private currentDay!: number;
 
   constructor() {
     super({
@@ -61,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.clock = DAY_DURATION / 2;
     this.tutorialFinished = false;
     this.dialogIndex = 0;
+    this.currentDay = 1;
 
     this.createBackgroundAndGui();
     this.createSeedPackets();
@@ -84,20 +84,15 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
-      this.dialog = new Dialog({
-        scene: this,
-        x: 100,
-        y: 400,
-        skipCallback: () => {
-          this.finishedIntro();
-        },
-      });
+      (this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).dialog.skipCallback = () => {
+        this.finishedIntro();
+      };
       void this.showIntroDialog();
     });
   }
 
   private async showIntroDialog(): Promise<void> {
-    await this.dialog.showDialog(INTRO_DIALOG[this.dialogIndex]);
+    await (this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).dialog.showDialog(INTRO_DIALOG[this.dialogIndex]);
     this.input.once(Phaser.Input.Events.POINTER_DOWN, async () => {
       if (this.tutorialFinished) {
         return;
@@ -118,22 +113,31 @@ export class GameScene extends Phaser.Scene {
         this.showIntroDialogObjects();
       } else if (this.dialogIndex === 4) {
         this.cleanupIntroDialogObjects();
+        this.showIntroFieldObjects();
+      } else if (this.dialogIndex === 6) {
+        this.cleanupIntroFieldObjects();
+      } else if (this.dialogIndex === 7) {
+        (this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).toggleQuests();
+      } else if (this.dialogIndex === 8) {
+        (this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).toggleQuests();
       }
 
       await this.showIntroDialog();
     });
   }
 
-  private finishedIntro(): void {
+  public finishedIntro(): void {
     this.lockInput = false;
     this.tutorialFinished = true;
-    this.dialog.hide();
+    (this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).dialog.hide();
+    (this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).tutorialFinished = true;
     this.cleanupIntroElementsText();
     this.cleanupIntroFieldObjects();
     this.cleanupIntroDialogObjects();
 
     const uiScene = this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene;
     uiScene.showTimeDetails();
+    uiScene.questIcon.setVisible(true);
     this.elementSystem.checkElementalBalances();
   }
 
@@ -244,6 +248,12 @@ export class GameScene extends Phaser.Scene {
     uiScene.setClockText(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
     uiScene.setDayText(dayCount.toString(10));
 
+    if (dayCount > this.currentDay) {
+      this.currentDay += 1;
+      uiScene.showInfoText(`Day ${this.currentDay}`);
+      uiScene.refreshQuests();
+    }
+
     if (this.selectedSeedPacket === undefined) {
       return;
     }
@@ -338,6 +348,8 @@ export class GameScene extends Phaser.Scene {
     this.elementSystem.harvestCrop(cropType);
     this.checkBalance();
     harvestCrop(cropType);
+    const uiScene = this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene;
+    uiScene.checkGoals();
   }
 
   private createFarmTiles(): void {
@@ -414,6 +426,8 @@ export class GameScene extends Phaser.Scene {
     this.elementSystem.plantCrop(plantType);
     this.checkBalance();
     plantCrop(plantType);
+    const uiScene = this.scene.get(SCENE_KEYS.UI_SCENE) as UiScene;
+    uiScene.checkGoals();
   }
 
   private checkBalance(): void {

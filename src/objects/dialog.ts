@@ -18,7 +18,7 @@ export class Dialog {
   constructor(config: DialogConfig) {
     this.#scene = config.scene;
     this.#skipCallback = config.skipCallback;
-    this.#container = this.#scene.add.container(config.x, config.y, []);
+    this.#container = this.#scene.add.container(config.x, config.y, []).setDepth(3);
     this.#createUi();
     const profilePic = this.#scene.add.image(0, 35, 'portrait', 0).setScale(0.5).setOrigin(0, 0.2);
     this.#dialogText = this.#scene.add.text(140, 32, '', {
@@ -60,7 +60,11 @@ export class Dialog {
 
     this.#container.add([skipText]);
 
-    // TODO: see if we can add a skip button
+    this.#container.setVisible(false);
+  }
+
+  set skipCallback(val: () => void) {
+    this.#skipCallback = val;
   }
 
   get isAnimationPlaying(): boolean {
@@ -72,11 +76,12 @@ export class Dialog {
   }
 
   public async showDialog(text: string): Promise<void> {
+    this.#container.setVisible(true);
     return new Promise((resolve) => {
       this.#dialogText.setText('').setAlpha(1);
       this.#arrow.setVisible(false);
       animateText(this.#scene, this.#dialogText, text, {
-        delay: 30,
+        delay: 50,
         callback: () => {
           this.#textAnimationPlaying = false;
           this.#arrow.setVisible(true);

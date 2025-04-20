@@ -9,6 +9,9 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   public preload(): void {
+    this.load.image('exclamation', 'assets/images/exclamation.png');
+    this.load.image('checkmark', 'assets/images/checkmark.png');
+    this.load.image('quest', 'assets/images/quest.png');
     this.load.image('portrait', 'assets/images/portrait.png');
     this.load.image('panel_beige', 'assets/images/panel_beige.png');
     this.load.image('arrow', 'assets/images/arrowBrown_right.png');

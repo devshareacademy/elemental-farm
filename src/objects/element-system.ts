@@ -7,6 +7,9 @@ import {
   SCALE_FACTOR,
   TILE_SIZE,
 } from '../common';
+import { eventResolved } from '../common/goals';
+import { SCENE_KEYS } from '../scenes/scene-keys';
+import { UiScene } from '../scenes/ui-scene';
 import { AirShaderPipeline } from '../shaders/air-shader';
 import { DayNightPipeline } from '../shaders/day-night-shader';
 import { HeatwavePipeline } from '../shaders/heat-wave-shader';
@@ -26,8 +29,12 @@ export class ElementSystem {
   private overGrownPlants: Phaser.GameObjects.Group;
   private leaves: Phaser.GameObjects.Sprite[];
   private plantsOverlay: Phaser.GameObjects.Image;
+  private weatherQueue: { start: boolean; element: ElementType; clear?: boolean }[];
+  private isTransitioning: boolean;
 
   constructor(farmTiles: FarmTile[][], scene: Phaser.Scene, plants: Phaser.GameObjects.Image) {
+    this.weatherQueue = [];
+    this.isTransitioning = false;
     this.elementBalance = {
       [ELEMENTS.AIR]: 0,
       [ELEMENTS.EARTH]: 0,
@@ -105,6 +112,19 @@ export class ElementSystem {
   }
 
   public async exampleEffects(): Promise<void> {
+    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.FIRE });
+    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.FIRE });
+    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.WATER });
+    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.WATER });
+    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.AIR });
+    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.AIR });
+    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.EARTH });
+    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.EARTH });
+    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.FIRE });
+    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.FIRE });
+    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.FIRE });
+    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.FIRE });
+
     await this.sleep(500);
     await this.startFireElement();
     await this.sleep(4000);
@@ -183,7 +203,6 @@ export class ElementSystem {
     const topTwoEntries = Object.entries(this.elementBalance)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 2);
-    // console.log(topTwoEntries[0], topTwoEntries[1], this.elementBalanceTotal / 4);
     if (topTwoEntries[0][1] >= this.elementBalanceTotal / 4 + 15) {
       this.handleImbalance(topTwoEntries[0][0] as ElementType);
     } else {
@@ -195,7 +214,8 @@ export class ElementSystem {
     if (elementType === ELEMENTS.AIR) {
       if (!this.isWindy) {
         console.log('⚠️ Elemental imbalance detected! - wind');
-        void this.startWindElement();
+        this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.AIR });
+        this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.AIR });
       }
       return;
     }
@@ -203,7 +223,8 @@ export class ElementSystem {
     if (elementType === ELEMENTS.WATER) {
       if (!this.isStorming) {
         console.log('⚠️ Elemental imbalance detected! - water');
-        void this.startWaterElement();
+        this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.WATER });
+        this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.WATER });
       }
       return;
     }
@@ -211,7 +232,8 @@ export class ElementSystem {
     if (elementType === ELEMENTS.FIRE) {
       if (!this.isHeatWave) {
         console.log('⚠️ Elemental imbalance detected! - heat');
-        void this.startFireElement();
+        this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.FIRE });
+        this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.FIRE });
       }
       return;
     }
@@ -219,13 +241,43 @@ export class ElementSystem {
     if (elementType === ELEMENTS.EARTH) {
       if (!this.isOvergrown) {
         console.log('⚠️ Elemental imbalance detected! - earth');
-        void this.startEarthElement();
+        this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.EARTH });
+        this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.EARTH });
       }
       return;
     }
   }
 
   public update(time: number, delta: number): void {
+    if (!this.isTransitioning && this.weatherQueue.length > 0) {
+      const obj = this.weatherQueue.shift() as { start: boolean; element: ElementType; clear?: boolean };
+      if (obj.clear) {
+        void this.clearCameraShader();
+      } else {
+        if (obj.start) {
+          if (obj.element === ELEMENTS.AIR) {
+            void this.startWindElement();
+          } else if (obj.element === ELEMENTS.EARTH) {
+            void this.startEarthElement();
+          } else if (obj.element === ELEMENTS.FIRE) {
+            void this.startFireElement();
+          } else if (obj.element === ELEMENTS.WATER) {
+            void this.startWaterElement();
+          }
+        } else {
+          if (obj.element === ELEMENTS.AIR) {
+            void this.stopWindElement();
+          } else if (obj.element === ELEMENTS.EARTH) {
+            void this.stopEarthElement();
+          } else if (obj.element === ELEMENTS.FIRE) {
+            void this.stopFireElement();
+          } else if (obj.element === ELEMENTS.WATER) {
+            void this.stopWaterElement();
+          }
+        }
+      }
+    }
+
     if (this.isStorming) {
       // Random chance for lightning every few seconds
       if (time - this.lastLightningTime > 5000 && Math.random() > 0.97) {
@@ -262,6 +314,13 @@ export class ElementSystem {
 
   public startFireElement(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.isTransitioning) {
+        this.weatherQueue.push({ start: true, element: ELEMENTS.FIRE });
+        resolve();
+        return;
+      }
+
+      this.isTransitioning = true;
       this.scene.cameras.main.setPostPipeline(HeatwavePipeline);
       const pipeline = this.scene.cameras.main.getPostPipeline(HeatwavePipeline) as HeatwavePipeline;
       // Tween to fade in the effect
@@ -271,6 +330,7 @@ export class ElementSystem {
           uMix: { value: 1.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          this.isTransitioning = false;
           resolve(undefined);
         },
       });
@@ -280,6 +340,13 @@ export class ElementSystem {
 
   private stopFireElement(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.isTransitioning) {
+        this.weatherQueue.push({ start: false, element: ELEMENTS.FIRE });
+        resolve();
+        return;
+      }
+
+      this.isTransitioning = true;
       const pipeline = this.scene.cameras.main.getPostPipeline(HeatwavePipeline) as HeatwavePipeline;
       // Tween to fade out the effect
       this.scene.tweens.add({
@@ -290,6 +357,7 @@ export class ElementSystem {
         onComplete: () => {
           this.isHeatWave = false;
           this.scene.cameras.main.removePostPipeline('HeatwavePipeline');
+          this.isTransitioning = false;
           resolve(undefined);
         },
       });
@@ -298,6 +366,13 @@ export class ElementSystem {
 
   private startWaterElement(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.isTransitioning) {
+        this.weatherQueue.push({ start: true, element: ELEMENTS.WATER });
+        resolve();
+        return;
+      }
+
+      this.isTransitioning = true;
       this.scene.cameras.main.setPostPipeline(RainPipeline);
       const pipeline = this.scene.cameras.main.getPostPipeline(RainPipeline) as RainPipeline;
       // Tween to fade in the effect
@@ -307,6 +382,7 @@ export class ElementSystem {
           uMix: { value: 1.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          this.isTransitioning = false;
           resolve(undefined);
         },
       });
@@ -316,6 +392,13 @@ export class ElementSystem {
 
   private stopWaterElement(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.isTransitioning) {
+        this.weatherQueue.push({ start: false, element: ELEMENTS.WATER });
+        resolve();
+        return;
+      }
+
+      this.isTransitioning = true;
       const pipeline = this.scene.cameras.main.getPostPipeline(RainPipeline) as RainPipeline;
       // Tween to fade out the effect
       this.scene.tweens.add({
@@ -326,6 +409,7 @@ export class ElementSystem {
         onComplete: () => {
           this.isStorming = false;
           this.scene.cameras.main.removePostPipeline('RainPipeline');
+          this.isTransitioning = false;
           resolve(undefined);
         },
       });
@@ -334,6 +418,13 @@ export class ElementSystem {
 
   private async startWindElement(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.isTransitioning) {
+        this.weatherQueue.push({ start: true, element: ELEMENTS.AIR });
+        resolve();
+        return;
+      }
+
+      this.isTransitioning = true;
       this.leaves.forEach((child) => child.setActive(true).setVisible(true).setAlpha(0));
       this.scene.tweens.add({
         targets: this.leaves,
@@ -352,6 +443,7 @@ export class ElementSystem {
           uMix: { value: 1.0, duration: 1000, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          this.isTransitioning = false;
           resolve(undefined);
         },
       });
@@ -361,6 +453,13 @@ export class ElementSystem {
 
   private async stopWindElement(): Promise<void> {
     return new Promise((resolve) => {
+      if (this.isTransitioning) {
+        this.weatherQueue.push({ start: false, element: ELEMENTS.AIR });
+        resolve();
+        return;
+      }
+
+      this.isTransitioning = true;
       this.scene.tweens.add({
         targets: this.leaves,
         duration: 1000,
@@ -380,6 +479,7 @@ export class ElementSystem {
           this.isWindy = false;
           this.leaves.forEach((child) => child.setActive(false).setVisible(false));
           this.plantsOverlay.removePostPipeline('AirShaderPipeline');
+          this.isTransitioning = false;
           resolve(undefined);
         },
       });
@@ -387,6 +487,12 @@ export class ElementSystem {
   }
 
   private startEarthElement(): void {
+    if (this.isTransitioning) {
+      this.weatherQueue.push({ start: true, element: ELEMENTS.EARTH });
+      return;
+    }
+
+    this.isTransitioning = true;
     this.overGrownPlants.setAlpha(0).setVisible(true);
     this.overGrownPlants.getChildren().forEach((child) => (child as Phaser.GameObjects.Image).setScale(0.1));
     this.scene.tweens.add({
@@ -399,9 +505,16 @@ export class ElementSystem {
       scaleY: SCALE_FACTOR / 2,
     });
     this.isOvergrown = true;
+    this.isTransitioning = false;
   }
 
   private stopEarthElement(): void {
+    if (this.isTransitioning) {
+      this.weatherQueue.push({ start: false, element: ELEMENTS.EARTH });
+      return;
+    }
+
+    this.isTransitioning = true;
     this.isOvergrown = false;
     this.scene.tweens.add({
       targets: this.overGrownPlants.getChildren(),
@@ -415,25 +528,35 @@ export class ElementSystem {
         this.overGrownPlants.setAlpha(0).setVisible(false);
       },
     });
+    this.isTransitioning = false;
   }
 
   private async clearCameraShader(): Promise<void> {
+    const isTutorialFinished = (this.scene.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).tutorialFinished;
     if (this.isHeatWave) {
       await this.stopFireElement();
-      return;
-    }
-    if (this.isStorming) {
+      if (isTutorialFinished) {
+        eventResolved(ELEMENTS.FIRE);
+      }
+    } else if (this.isStorming) {
       await this.stopWaterElement();
-      return;
-    }
-    if (this.isWindy) {
+      if (isTutorialFinished) {
+        eventResolved(ELEMENTS.WATER);
+      }
+    } else if (this.isWindy) {
       await this.stopWindElement();
+      if (isTutorialFinished) {
+        eventResolved(ELEMENTS.AIR);
+      }
+    } else if (this.isOvergrown) {
+      this.stopEarthElement();
+      if (isTutorialFinished) {
+        eventResolved(ELEMENTS.EARTH);
+      }
+    } else {
       return;
     }
-
-    if (this.isOvergrown) {
-      this.stopEarthElement();
-    }
+    (this.scene.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).checkGoals();
   }
 
   private async sleep(delay: number): Promise<void> {

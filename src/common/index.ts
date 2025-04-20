@@ -47,10 +47,10 @@ export const PLANT_TYPE_TO_ELEMENT_MAP = {
       AIR: 0,
     },
     returns: {
-      WATER: 2,
+      WATER: 1,
       FIRE: 0,
       EARTH: 0,
-      AIR: 1,
+      AIR: 2,
     },
   },
   CARROT: {
@@ -105,11 +105,13 @@ export const FARM_TILE_BALANCE_TYPE = {
 } as const;
 
 export const INTRO_DIALOG = [
-  'Hey there! You must be the new farmer. I’m Lila—born and raised right here in the valley.',
-  'This land? It’s not like other places. Every plant you grow connects to one of the four elements—Earth, Water, Fire, and Air.',
-  'When you plant a seed, it stirs the Earth. When you water it, you call on Water. And some plants even warm the soil or call in the breeze!',
-  'But be careful—if any one element gets too strong, the land reacts. Heat waves, gusty winds, sudden rain… it’s wild!',
-  'That’s why we try to keep things balanced out here. It’s kinda like a dance—give a little, take a little.',
-  "Each day, the grove spirits leave behind a little challenge for us. They're like daily goals. Completing them helps the land stay happy.",
-  'So! Ready to get your hands dirty? Your first goal’s waiting, and I’ll be here if you need any help.',
+  'Hey there! You must be the new farmer. I’m Lila — born and raised right here in the valley.',
+  'This land’s a little... special. Everything you plant connects to one of the four elements—Earth, Water, Fire, and Air.',
+  'Each action affects the balance. Watering brings in Water, planting stirs Earth, and some crops call the wind or even heat things up!',
+  'The land’s alive, in a way. When an element gets too strong, you’ll start to see it...',
+  'Take a look at the soil—see how it shifts color? That’s how you know when there’s too much of one element.',
+  "Too much Fire and the soil glows warm. Overflowing Water and it turns bluish and damp. It’s nature’s way of saying: 'Hey, easy there!'",
+  'If things get really out of balance, you’ll trigger all kinds of strange effects—heat waves, wind bursts, sudden rain...',
+  'But don’t worry! Each day, the grove spirits leave us a little challenge. A goal to work toward that keeps the land happy.',
+  'So! Ready to dig in? Your first goal’s waiting. I’ll be nearby if you need help.',
 ];

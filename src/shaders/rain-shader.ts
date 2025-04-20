@@ -18,32 +18,25 @@ float rand(vec2 co){
 
 void main(void) {
   vec2 uv = outTexCoord;
+  vec4 sceneColor = texture2D(uMainSampler, uv);
 
-  // Base scene color
-  vec4 baseColor = texture2D(uMainSampler, uv);
-  vec4 stormColor = baseColor;
+  // Darken for storm
+  sceneColor.rgb *= 0.9;
 
-  // Storm darkening
-  stormColor.rgb *= 0.6;
+  // Add lightning flash
+  sceneColor.rgb += uLightning * vec3(1.0);
+  sceneColor.rgb = clamp(sceneColor.rgb, 0.0, 1.0);
 
-  // Lightning flash (scaled by uMix)
-  stormColor.rgb += uLightning * vec3(1.0);
-  stormColor.rgb = clamp(stormColor.rgb, 0.0, 1.0);
-
-  // Shift UV to make diagonal rain
+  // Adjust to make rain fall diagonally
   uv.x += uv.y * 0.5;
 
-  // Rain drops
+  // Create the rain pattern
   float dropFrequency = 200.0;
   float speed = 0.6;
   float rain = step(0.95, rand(vec2(floor(uv.x * dropFrequency), floor((uv.y + time * speed) * dropFrequency))));
-  vec4 rainColor = vec4(0.6, 0.6, 0.8, rain * 1.0); // white-blue rain tint
+  vec4 rainColor = vec4(0.6, 0.6, 0.8, rain * 1.0); // adjust alpha for intensity
 
-  // Blend rain into storm scene (only where rain alpha is 1)
-  stormColor = mix(stormColor, rainColor, rainColor.a);
-
-  // Mix final result with base scene based on uMix
-  gl_FragColor = mix(baseColor, stormColor, uMix);
+  gl_FragColor = mix(sceneColor, rainColor, rainColor.a);
 }
 `;
 
