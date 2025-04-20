@@ -1,5 +1,5 @@
 {
-	"name": "@devshareacademy/gamedevjam-2025-placeholder",
+	"name": "@devshareacademy/elemental-farm",
 	"version": "0.0.1",
 	"description": "A Phaser 3 game.",
 	"scripts": {
@@ -12,9 +12,9 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/devshareacademy/gamedevjam-2025-placeholder.git"
+		"url": "https://github.com/devshareacademy/elemental-farm.git"
 	},
-	"homepage": "https://github.com/devshareacademy/gamedevjam-2025-placeholder",
+	"homepage": "https://github.com/devshareacademy/elemental-farm",
 	"devDependencies": {
 		"@devshareacademy/eslint-config": "0.0.19",
 		"@devshareacademy/prettier-config": "0.0.6",

@@ -101,7 +101,7 @@ In the project folder, there is a variety of files and folders. At a high level,
 
 ```
 .
-├── .vscode          this folder contains github workflows for this project, currently setup to allow deploying the project to itch.io
+├── .github          this folder contains github workflows for this project, currently setup to allow deploying the project to itch.io
 ├── .vscode          this folder contains configuration files for the VSCode editor, which will add auto linting and custom launch configurations for running tests (if you are not using VSCode, you can remove this folder from the project)
 ├── config           this folder contains configuration files for ESLint and TSC (the TypeScript Compiler)
 ├── dist             a dynamically generated folder which will contain the compiled source code of the finished library (generated when you run the build script)
@@ -117,4 +117,4 @@ In the project folder, there is a variety of files and folders. At a high level,
 
 ## Issues
 
-For any issues you encounter, please open a new [GitHub Issue](https://github.com/devshareacademy/gamedevjam-2025-placeholder/issues) on this project.
+For any issues you encounter, please open a new [GitHub Issue](https://github.com/devshareacademy/elemental-farm/issues) on this project.
