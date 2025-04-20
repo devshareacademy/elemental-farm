@@ -33,7 +33,7 @@ With a handful of seeds and a bit of guidance, it’s now up to you to restore h
 
 ### Crops
 
-Each time you
+Planting a crop consumes its primary element from the soil. Harvesting a crop returns some elemental energy, often with a secondary shift that helps or hinders balance.
 
 | Plant Type | Element | Effect When Planted | Effect When Harvested | Soil Visual Cue |
 | --- | --- | --- | --- | --- |
