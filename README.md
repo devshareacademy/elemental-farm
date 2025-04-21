@@ -6,13 +6,13 @@ A Phaser 3 game that was submitted for the Gavedev.js Jam 2025 game jam.
 
 ![Screenshot 2](/docs/screenshot2.png?raw=true 'Screenshot 2')
 
-![Screenshot 3](/docs/screenshot5.png?raw=true 'Screenshot 3')
+![Screenshot 3](/docs/screenshot3.png?raw=true 'Screenshot 3')
 
 You can play the game here on Itch.io: [Elemental Farm](https://galemius.itch.io/elemental-farm)
 
 ## Gameplay Trailer
 
-[<img src="https://i.ytimg.com/vi/-nPV9iv2Dmc/hqdefault.jpg">](https://youtu.be/-nPV9iv2Dmc "Elemental Farm Gameplay Trailer")
+[<img src="https://i.ytimg.com/vi/O2CZOth2Z8Y/hqdefault.jpg">](https://youtu.be/O2CZOth2Z8Y "Elemental Farm Gameplay Trailer")
 
 ## Story
 
