@@ -112,19 +112,6 @@ export class ElementSystem {
   }
 
   public async exampleEffects(): Promise<void> {
-    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.FIRE });
-    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.FIRE });
-    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.WATER });
-    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.WATER });
-    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.AIR });
-    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.AIR });
-    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.EARTH });
-    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.EARTH });
-    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.FIRE });
-    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.FIRE });
-    // this.weatherQueue.push({ start: true, clear: false, element: ELEMENTS.FIRE });
-    // this.weatherQueue.push({ start: false, clear: true, element: ELEMENTS.FIRE });
-
     await this.sleep(500);
     await this.startFireElement();
     await this.sleep(4000);
@@ -321,6 +308,7 @@ export class ElementSystem {
       }
 
       this.isTransitioning = true;
+      this.scene.cameras.main.resetPostPipeline();
       this.scene.cameras.main.setPostPipeline(HeatwavePipeline);
       const pipeline = this.scene.cameras.main.getPostPipeline(HeatwavePipeline) as HeatwavePipeline;
       // Tween to fade in the effect
@@ -373,6 +361,7 @@ export class ElementSystem {
       }
 
       this.isTransitioning = true;
+      this.scene.cameras.main.resetPostPipeline();
       this.scene.cameras.main.setPostPipeline(RainPipeline);
       const pipeline = this.scene.cameras.main.getPostPipeline(RainPipeline) as RainPipeline;
       // Tween to fade in the effect
@@ -434,6 +423,7 @@ export class ElementSystem {
         alpha: 1,
       });
 
+      this.scene.cameras.main.resetPostPipeline();
       this.plantsOverlay.setPostPipeline(AirShaderPipeline);
       const pipeline = this.plantsOverlay.getPostPipeline(AirShaderPipeline) as AirShaderPipeline;
       // Tween to fade in the effect
