@@ -564,6 +564,7 @@ export class ElementSystem {
       return;
     }
     (this.scene.scene.get(SCENE_KEYS.UI_SCENE) as UiScene).checkGoals();
+    console.log(this.scene.cameras.main.postPipelines.length);
   }
 
   private async sleep(delay: number): Promise<void> {
