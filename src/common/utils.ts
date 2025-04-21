@@ -1,4 +1,4 @@
-export const DAY_DURATION = 60000 * 1; // 5 minutes in ms
+export const DAY_DURATION = 60000 * 5; // 5 minutes in ms
 // 60000 - 1 minute in ms
 // 1200_000 - 20 min
 
