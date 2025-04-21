@@ -313,10 +313,9 @@ export class ElementSystem {
       console.log('startFireElement - running');
       this.isTransitioning = true;
       this.scene.cameras.main.setPostPipeline(HeatwavePipeline);
-      const pipeline = this.scene.cameras.main.getPostPipeline(HeatwavePipeline) as HeatwavePipeline;
       // Tween to fade in the effect
       this.scene.tweens.add({
-        targets: pipeline,
+        targets: this.scene.cameras.main.getPostPipeline(HeatwavePipeline),
         props: {
           uMix: { value: 1.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
@@ -325,6 +324,7 @@ export class ElementSystem {
           this.isTransitioning = false;
           resolve(undefined);
         },
+        delay: 1,
       });
       this.isHeatWave = true;
     });
@@ -341,10 +341,9 @@ export class ElementSystem {
 
       console.log('stopFireElement - running');
       this.isTransitioning = true;
-      const pipeline = this.scene.cameras.main.getPostPipeline(HeatwavePipeline) as HeatwavePipeline;
       // Tween to fade out the effect
       this.scene.tweens.add({
-        targets: pipeline,
+        targets: this.scene.cameras.main.getPostPipeline(HeatwavePipeline),
         props: {
           uMix: { value: 0.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
@@ -355,6 +354,7 @@ export class ElementSystem {
           this.isTransitioning = false;
           resolve(undefined);
         },
+        delay: 1,
       });
     });
   }
@@ -371,10 +371,9 @@ export class ElementSystem {
       console.log('startWaterElement - running');
       this.isTransitioning = true;
       this.scene.cameras.main.setPostPipeline(RainPipeline);
-      const pipeline = this.scene.cameras.main.getPostPipeline(RainPipeline) as RainPipeline;
       // Tween to fade in the effect
       this.scene.tweens.add({
-        targets: pipeline,
+        targets: this.scene.cameras.main.getPostPipeline(RainPipeline),
         props: {
           uMix: { value: 1.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
@@ -383,6 +382,7 @@ export class ElementSystem {
           this.isTransitioning = false;
           resolve(undefined);
         },
+        delay: 1,
       });
       this.isStorming = true;
     });
@@ -399,10 +399,9 @@ export class ElementSystem {
 
       console.log('stopWaterElement - running');
       this.isTransitioning = true;
-      const pipeline = this.scene.cameras.main.getPostPipeline(RainPipeline) as RainPipeline;
       // Tween to fade out the effect
       this.scene.tweens.add({
-        targets: pipeline,
+        targets: this.scene.cameras.main.getPostPipeline(RainPipeline),
         props: {
           uMix: { value: 0.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
@@ -413,6 +412,7 @@ export class ElementSystem {
           this.isTransitioning = false;
           resolve(undefined);
         },
+        delay: 1,
       });
     });
   }
@@ -438,10 +438,9 @@ export class ElementSystem {
       });
 
       this.plantsOverlay.setPostPipeline(AirShaderPipeline);
-      const pipeline = this.plantsOverlay.getPostPipeline(AirShaderPipeline) as AirShaderPipeline;
       // Tween to fade in the effect
       this.scene.tweens.add({
-        targets: pipeline,
+        targets: this.plantsOverlay.getPostPipeline(AirShaderPipeline),
         props: {
           uMix: { value: 1.0, duration: 1000, ease: 'Sine.easeInOut' },
         },
@@ -450,6 +449,7 @@ export class ElementSystem {
           this.isTransitioning = false;
           resolve(undefined);
         },
+        delay: 1,
       });
       this.isWindy = true;
     });
@@ -474,10 +474,9 @@ export class ElementSystem {
         alpha: 0,
       });
 
-      const pipeline = this.plantsOverlay.getPostPipeline(AirShaderPipeline) as AirShaderPipeline;
       // Tween to fade out the effect
       this.scene.tweens.add({
-        targets: pipeline,
+        targets: this.plantsOverlay.getPostPipeline(AirShaderPipeline),
         props: {
           uMix: { value: 0.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
@@ -489,6 +488,7 @@ export class ElementSystem {
           this.isTransitioning = false;
           resolve(undefined);
         },
+        delay: 1,
       });
     });
   }
