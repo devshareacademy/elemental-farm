@@ -237,7 +237,9 @@ export class ElementSystem {
 
   public update(time: number, delta: number): void {
     if (!this.isTransitioning && this.weatherQueue.length > 0) {
+      console.log('removing element from queue');
       const obj = this.weatherQueue.shift() as { start: boolean; element: ElementType; clear?: boolean };
+      console.log(obj);
       if (obj.clear) {
         void this.clearCameraShader();
       } else {
@@ -302,13 +304,14 @@ export class ElementSystem {
   public startFireElement(): Promise<void> {
     return new Promise((resolve) => {
       if (this.isTransitioning) {
+        console.log('startFireElement - add to queue');
         this.weatherQueue.push({ start: true, element: ELEMENTS.FIRE });
         resolve();
         return;
       }
 
+      console.log('startFireElement - running');
       this.isTransitioning = true;
-      this.scene.cameras.main.resetPostPipeline();
       this.scene.cameras.main.setPostPipeline(HeatwavePipeline);
       const pipeline = this.scene.cameras.main.getPostPipeline(HeatwavePipeline) as HeatwavePipeline;
       // Tween to fade in the effect
@@ -318,6 +321,7 @@ export class ElementSystem {
           uMix: { value: 1.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          console.log('startFireElement - done');
           this.isTransitioning = false;
           resolve(undefined);
         },
@@ -329,11 +333,13 @@ export class ElementSystem {
   private stopFireElement(): Promise<void> {
     return new Promise((resolve) => {
       if (this.isTransitioning) {
+        console.log('stopFireElement - add to queue');
         this.weatherQueue.push({ start: false, element: ELEMENTS.FIRE });
         resolve();
         return;
       }
 
+      console.log('stopFireElement - running');
       this.isTransitioning = true;
       const pipeline = this.scene.cameras.main.getPostPipeline(HeatwavePipeline) as HeatwavePipeline;
       // Tween to fade out the effect
@@ -343,6 +349,7 @@ export class ElementSystem {
           uMix: { value: 0.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          console.log('stopFireElement - done');
           this.isHeatWave = false;
           this.scene.cameras.main.removePostPipeline('HeatwavePipeline');
           this.isTransitioning = false;
@@ -355,13 +362,14 @@ export class ElementSystem {
   private startWaterElement(): Promise<void> {
     return new Promise((resolve) => {
       if (this.isTransitioning) {
+        console.log('startWaterElement - queue');
         this.weatherQueue.push({ start: true, element: ELEMENTS.WATER });
         resolve();
         return;
       }
 
+      console.log('startWaterElement - running');
       this.isTransitioning = true;
-      this.scene.cameras.main.resetPostPipeline();
       this.scene.cameras.main.setPostPipeline(RainPipeline);
       const pipeline = this.scene.cameras.main.getPostPipeline(RainPipeline) as RainPipeline;
       // Tween to fade in the effect
@@ -371,6 +379,7 @@ export class ElementSystem {
           uMix: { value: 1.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          console.log('startWaterElement - done');
           this.isTransitioning = false;
           resolve(undefined);
         },
@@ -382,11 +391,13 @@ export class ElementSystem {
   private stopWaterElement(): Promise<void> {
     return new Promise((resolve) => {
       if (this.isTransitioning) {
+        console.log('stopWaterElement - queue');
         this.weatherQueue.push({ start: false, element: ELEMENTS.WATER });
         resolve();
         return;
       }
 
+      console.log('stopWaterElement - running');
       this.isTransitioning = true;
       const pipeline = this.scene.cameras.main.getPostPipeline(RainPipeline) as RainPipeline;
       // Tween to fade out the effect
@@ -396,6 +407,7 @@ export class ElementSystem {
           uMix: { value: 0.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          console.log('stopWaterElement - done');
           this.isStorming = false;
           this.scene.cameras.main.removePostPipeline('RainPipeline');
           this.isTransitioning = false;
@@ -408,11 +420,13 @@ export class ElementSystem {
   private async startWindElement(): Promise<void> {
     return new Promise((resolve) => {
       if (this.isTransitioning) {
+        console.log('startWindElement - queue');
         this.weatherQueue.push({ start: true, element: ELEMENTS.AIR });
         resolve();
         return;
       }
 
+      console.log('startWindElement - running');
       this.isTransitioning = true;
       this.leaves.forEach((child) => child.setActive(true).setVisible(true).setAlpha(0));
       this.scene.tweens.add({
@@ -423,7 +437,6 @@ export class ElementSystem {
         alpha: 1,
       });
 
-      this.scene.cameras.main.resetPostPipeline();
       this.plantsOverlay.setPostPipeline(AirShaderPipeline);
       const pipeline = this.plantsOverlay.getPostPipeline(AirShaderPipeline) as AirShaderPipeline;
       // Tween to fade in the effect
@@ -433,6 +446,7 @@ export class ElementSystem {
           uMix: { value: 1.0, duration: 1000, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          console.log('startWindElement - done');
           this.isTransitioning = false;
           resolve(undefined);
         },
@@ -443,12 +457,14 @@ export class ElementSystem {
 
   private async stopWindElement(): Promise<void> {
     return new Promise((resolve) => {
+      console.log('stopWindElement - queue');
       if (this.isTransitioning) {
         this.weatherQueue.push({ start: false, element: ELEMENTS.AIR });
         resolve();
         return;
       }
 
+      console.log('stopWindElement - running');
       this.isTransitioning = true;
       this.scene.tweens.add({
         targets: this.leaves,
@@ -466,6 +482,7 @@ export class ElementSystem {
           uMix: { value: 0.0, duration: 1500, ease: 'Sine.easeInOut' },
         },
         onComplete: () => {
+          console.log('stopWindElement - done');
           this.isWindy = false;
           this.leaves.forEach((child) => child.setActive(false).setVisible(false));
           this.plantsOverlay.removePostPipeline('AirShaderPipeline');
